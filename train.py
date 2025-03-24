@@ -4,8 +4,8 @@ import torch.optim as optim
 import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from dataset import VideoDataset
-from model import CNN_LSTM
+from dataset.dataset import VideoDataset
+from models.model import CNN_LSTM
 from glob import glob
 import numpy as np
 import tqdm
