@@ -1,10 +1,18 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from transformers import AutoImageProcessor, AutoModelForVideoClassification
 
-processor = AutoImageProcessor.from_pretrained("Fulwa/videomae-base1-finetuned-ucf101-subset")
-model = AutoModelForVideoClassification.from_pretrained("Fulwa/videomae-base1-finetuned-ucf101-subset")
+
+
+class Attention(nn.Module):
+    def __init__(self, hidden_dim):
+        super(Attention, self).__init__()
+        self.attn = nn.Linear(hidden_dim, 1)
+    
+    def forward(self, lstm_output):
+        attn_weights = torch.softmax(self.attn(lstm_output), dim=1)
+        context_vector = torch.sum(attn_weights * lstm_output, dim=1)
+        return context_vector
 
 class CNNFeatureExtractor(nn.Module):
     def __init__(self):
@@ -24,10 +32,12 @@ class CNN_LSTM(nn.Module):
         super(CNN_LSTM, self).__init__()
         self.cnn = CNNFeatureExtractor()
         self.lstm = nn.LSTM(input_size=feature_dim, hidden_size=hidden_dim, num_layers=num_layers, batch_first=True, dropout=0.3)
+        self.attention = Attention(hidden_dim)
         self.fc = nn.Linear(hidden_dim, num_classes)
     
     def forward(self, x):
         x = self.cnn(x)
         x, _ = self.lstm(x)
-        x = self.fc(x[:, -1, :])
+        x = self.attention(x)
+        x = self.fc(x)
         return x
